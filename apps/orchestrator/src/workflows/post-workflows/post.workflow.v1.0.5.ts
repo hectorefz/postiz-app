@@ -21,7 +21,7 @@ const proxyTaskQueue = (taskQueue: string) => {
     startToCloseTimeout: '10 minute',
     taskQueue,
     retry: {
-      maximumAttempts: 3,
+      maximumAttempts: 1,
       backoffCoefficient: 1,
       initialInterval: '2 minutes',
     },
@@ -39,7 +39,7 @@ const {
 } = proxyActivities<PostActivity>({
   startToCloseTimeout: '10 minute',
   retry: {
-    maximumAttempts: 3,
+    maximumAttempts: 1,
     backoffCoefficient: 1,
     initialInterval: '2 minutes',
   },

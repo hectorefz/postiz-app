@@ -245,20 +245,28 @@ export class PostActivity {
       integration
     );
 
-    await this._temporalService.client
-      .getRawClient()
-      .workflow.start('streakWorkflow', {
-        args: [{ organizationId: integration.organizationId }],
-        workflowId: `streak_${integration.organizationId}`,
-        taskQueue: 'main',
-        workflowIdConflictPolicy: 'TERMINATE_EXISTING',
-        typedSearchAttributes: new TypedSearchAttributes([
-          {
-            key: organizationId,
-            value: integration.organizationId,
-          },
-        ]),
-      });
+    // streakWorkflow es best-effort: si falla (ej. WorkflowExecutionAlreadyStartedError
+    // por race entre posts simultáneos), NO debe tumbar el postSocial — el post
+    // social ya se publicó arriba. Patch floza-labs.
+    try {
+      await this._temporalService.client
+        .getRawClient()
+        .workflow.start('streakWorkflow', {
+          args: [{ organizationId: integration.organizationId }],
+          workflowId: `streak_${integration.organizationId}`,
+          taskQueue: 'main',
+          workflowIdConflictPolicy: 'TERMINATE_EXISTING',
+          typedSearchAttributes: new TypedSearchAttributes([
+            {
+              key: organizationId,
+              value: integration.organizationId,
+            },
+          ]),
+        });
+    } catch (streakErr) {
+      console.warn('[floza-patch] streakWorkflow start falló (no-fatal):',
+        streakErr instanceof Error ? streakErr.message : streakErr);
+    }
 
     return postNow;
   }
